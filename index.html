@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Widget</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f9fafb;
+            color: #1a1d23;
+        }
+    </style>
+</head>
+<body>
+    <div class="max-w-md p-4 mt-4 mx-auto bg-white rounded-lg shadow-md relative">
+        <div class="weather-main flex justify-between gap-4">
+            <div class="location-info flex flex-col items-center">
+                <h1 class="city-name text-lg font-bold mt-2" id="city-name">Enter City</h1>
+                <span class="temperature text-5xl font-bold" id="temperature">--°</span>
+            </div>
+            <div class="icon-container" id="icon-container">
+                <i class="fa-solid fa-cloud-sun fa-3x text-gray-600" id="weather-icon"></i>
+            </div>
+        </div>
+        <div class="forecast flex justify-between gap-4 mt-4" id="forecast-container">
+        </div>
+    </div>
+    <button id="search-button" class="p-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 absolute bottom-4 right-4">
+        <i class="fa-solid fa-magnifying-glass"></i>
+    </button>
+    <div id="modal" class="hidden fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex justify-center items-center">
+        <div class="bg-white p-4 rounded-lg shadow-md w-80">
+            <div class="input-container flex gap-2">
+                <input type="text" id="cityInput" placeholder="Enter city name" class="flex-1 p-2 border border-gray-300 rounded-md">
+                <button onclick="getWeather()" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700">Search</button>
+            </div>
+            <button id="close-button" onclick="closeModal()" class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-700 mt-2">Close</button>
+        </div>
+    </div>
+    <script>
+        const weekDays = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+        const apiKey = 'ea3a77dcbf444b95a137608be04fe3b5'; 
+
+        document.getElementById('search-button').addEventListener('click', () => {
+            document.getElementById('modal').classList.remove('hidden');
+        });
+
+        function closeModal() {
+            document.getElementById('modal').classList.add('hidden');
+        }
+
+        async function getWeather() {
+            const cityInput = document.getElementById('cityInput');
+            const city = cityInput.value;
+
+            if (!city) {
+                alert('Please enter a city name');
+                return;
+            }
+
+            // Update city name
+            document.querySelector('.city-name').textContent = city;
+
+            try {
+                const response = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`);
+                const data = await response.json();
+
+                // Update current temperature
+                document.querySelector('.temperature').textContent = `${Math.round(data.main.temp)}°C`;
+
+                // Update weather icon
+                const weatherIcon = document.getElementById('weather-icon');
+                const weatherId = data.weather[0].id;
+                if (weatherId >= 200 && weatherId <= 232) {
+                    weatherIcon.className = 'fa-solid fa-cloud-bolt fa-3x text-gray-600';
+                } else if (weatherId >= 300 && weatherId <= 321) {
+                    weatherIcon.className = 'fa-solid fa-cloud-rain fa-3x text-gray-600';
+                } else if (weatherId >= 500 && weatherId <= 531) {
+                    weatherIcon.className = 'fa-solid fa-cloud-showers-heavy fa-3x text-gray-600';
+                } else if (weatherId >= 600 && weatherId <= 622) {
+                    weatherIcon.className = 'fa-solid fa-snowflake fa-3x text-gray-600';
+                } else if (weatherId >= 701 && weatherId <= 781) {
+                    weatherIcon.className = 'fa-solid fa-smog fa-3x text-gray-600';
+                } else if (weatherId === 800) {
+                    weatherIcon.className = 'fa-solid fa-sun fa-3x text-gray-600';
+                } else if (weatherId >= 801 && weatherId <= 804) {
+                    weatherIcon.className = 'fa-solid fa-cloud-sun fa-3x text-gray-600';
+                }
+
+                // Update forecast temperatures
+                const forecastResponse = await fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${apiKey}&units=metric`);
+                const forecastData = await forecastResponse.json();
+
+                const forecastContainer = document.getElementById('forecast-container');
+                forecastContainer.innerHTML = '';
+
+                forecastData.list.forEach((day, index) => {
+                    if (index % 8 === 0) {
+                        const forecastDay = document.createElement('div');
+                        forecastDay.classList.add('forecast-day', 'flex', 'flex-col', 'items-center', 'gap-1');
+
+                        const dayOfWeek = document.createElement('span');
+                        dayOfWeek.classList.add('uppercase', 'text-sm');
+                        const date = new Date(day.dt * 1000);
+                        dayOfWeek.textContent = weekDays[date.getDay()];
+
+                        const weatherIcon = document.createElement('i');
+                        weatherIcon.classList.add('fa-solid', 'text-gray-600');
+                        const weatherId = day.weather[0].id;
+                        if (weatherId >= 200 && weatherId <= 232) {
+                            weatherIcon.className = 'fa-solid fa-cloud-bolt fa-2x text-gray-600';
+                        } else if (weatherId >= 300 && weatherId <= 321) {
+                            weatherIcon.className = 'fa-solid fa-cloud-rain fa-2x text-gray-600';
+                        } else if (weatherId >= 500 && weatherId <= 531) {
+                            weatherIcon.className = 'fa-solid fa-cloud-showers-heavy fa-2x text-gray-600';
+                        } else if (weatherId >= 600 && weatherId <= 622) {
+                            weatherIcon.className = 'fa-solid fa-snowflake fa-2x text-gray-600';
+                        } else if (weatherId >= 701 && weatherId <= 781) {
+                            weatherIcon.className = 'fa-solid fa-smog fa-2x text-gray-600';
+                        } else if (weatherId === 800) {
+                            weatherIcon.className = 'fa-solid fa-sun fa-2x text-gray-600';
+                        } else if (weatherId >= 801 && weatherId <= 804) {
+                            weatherIcon.className = 'fa-solid fa-cloud-sun fa-2x text-gray-600';
+                        }
+
+                        const temperature = document.createElement('span');
+                        temperature.classList.add('text-sm');
+                        temperature.textContent = `${Math.round(day.main.temp)}°C`;
+
+                        forecastDay.appendChild(dayOfWeek);
+                        forecastDay.appendChild(weatherIcon);
+                        forecastDay.appendChild(temperature);
+
+                        forecastContainer.appendChild(forecastDay);
+                    }
+                });
+
+                // Save weather data to local storage
+                localStorage.setItem('city', city);
+                localStorage.setItem('temperature', document.querySelector('.temperature').textContent);
+                localStorage.setItem('weatherIcon', document.getElementById('weather-icon').className);
+                localStorage.setItem('forecast', forecastContainer.innerHTML);
+            } catch (error) {
+                console.error(error);
+            }
+
+            closeModal();
+        }
+
+        // Load weather data from local storage
+        if (localStorage.getItem('city')) {
+            document.querySelector('.city-name').textContent = localStorage.getItem('city');
+            document.querySelector('.temperature').textContent = localStorage.getItem('temperature');
+            document.getElementById('weather-icon').className = localStorage.getItem('weatherIcon');
+            document.getElementById('forecast-container').innerHTML = localStorage.getItem('forecast');
+        }
+    </script>
+</body>
+</html>
